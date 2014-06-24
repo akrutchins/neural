@@ -303,4 +303,31 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     error should be < 0.05
   }
+
+  "A Mixed Tanh and Logistic Neural Network" should "converge to the correct outputs" in {
+    val neuralNet : NeuralNetwork = new NeuralNetwork
+    val input : InputUnit = neuralNet.inputUnit(2)
+    val logistic : LogisticUnit = neuralNet.logisticUnit(2,3)
+    val tanh : TanhUnit = neuralNet.tanhUnit(3,2)
+    val output : OutputUnit = neuralNet.outputUnit(2)
+
+    input >> logistic
+    logistic >> tanh
+    tanh >> output
+
+    input.inputs = DenseVector[Double](1,2)
+    output.goldOutputs = DenseVector[Double](-0.75,0.5)
+
+    var error : Double = 0.0
+
+    for (i <- 0 to 100) {
+      neuralNet.feedForward()
+      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      println(i+": "+output.outputs+" ~ "+error)
+      neuralNet.backProp()
+      tanh.adjustWeights()
+    }
+
+    error should be < 0.05
+  }
 }
