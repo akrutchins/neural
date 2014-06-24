@@ -5,7 +5,7 @@ import edu.stanford.scalann.NeuralNetwork
 import edu.stanford.scalann.abstractunits.AbstractUnit
 
 /**
- * Created by Keenon on 6/22/14.
+ * Models an output unit, can backprop error from an observed value
  */
 class OutputUnit(network : NeuralNetwork, size : Int) extends AbstractUnit(network) {
 
@@ -21,9 +21,12 @@ class OutputUnit(network : NeuralNetwork, size : Int) extends AbstractUnit(netwo
     outputs := childInterface.activationView(this)
   }
   override def backProp() {
-    assert(goldOutputs != null, "Must have non-null gold outputs for backprop")
-    assert(goldOutputs.length == outputs.length)
-    childInterface.deltaView(this) := (outputs - goldOutputs)
+    if (goldOutputs != null) {
+      assert(goldOutputs.length == outputs.length)
+      childInterface.deltaView(this) := (outputs - goldOutputs)
+    }
+    else {
+      childInterface.deltaView(this) := 0.0
+    }
   }
-  override def adjustWeights() {}
 }

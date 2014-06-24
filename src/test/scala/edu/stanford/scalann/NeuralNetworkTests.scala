@@ -158,13 +158,33 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     for (i <- 0 to 100) {
       neuralNet.feedForward()
-      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
       println(i+": "+output.outputs+" ~ "+error)
       neuralNet.backProp()
-      linear.adjustWeights()
+      linear.oneshotAdjustWeights()
     }
 
     error should be < 0.05
+  }
+
+  it should "not modify weights on an unobserved output" in {
+    val neuralNet : NeuralNetwork = new NeuralNetwork
+    val input : InputUnit = neuralNet.inputUnit(2)
+    val linear : LinearUnit = neuralNet.linearUnit(2,2)
+    val output : OutputUnit = neuralNet.outputUnit(2)
+
+    input >> linear
+    linear >> output
+
+    input.inputs = DenseVector[Double](1,2)
+    output.goldOutputs = null
+
+    var error : Double = 0.0
+
+    neuralNet.feedForward()
+    neuralNet.backProp()
+
+    input.deltas should equal (DenseVector[Double](0,0))
   }
 
   "A Single Layer Logistic Neural Network" should "correct weights on a logistic layer" in {
@@ -187,10 +207,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     for (i <- 0 to 100) {
       neuralNet.feedForward()
-      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
       println(i+": "+output.outputs+" ~ "+error)
       neuralNet.backProp()
-      logistic.adjustWeights()
+      logistic.oneshotAdjustWeights()
     }
 
     error should be < 0.05
@@ -222,11 +242,11 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     for (i <- 0 to 100) {
       neuralNet.feedForward()
-      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
       println(i+": "+output.outputs+" ~ "+error)
       neuralNet.backProp()
-      logistic1.adjustWeights()
-      logistic2.adjustWeights()
+      logistic1.oneshotAdjustWeights()
+      logistic2.oneshotAdjustWeights()
     }
 
     println("Logistic 1 weights: \n"+logistic1.weights)
@@ -260,12 +280,12 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     for (i <- 0 to 100) {
       neuralNet.feedForward()
-      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
       println(i+": "+output.outputs+" ~ "+error)
       neuralNet.backProp()
-      logistic1.adjustWeights()
-      logistic2.adjustWeights()
-      logistic3.adjustWeights()
+      logistic1.oneshotAdjustWeights()
+      logistic2.oneshotAdjustWeights()
+      logistic3.oneshotAdjustWeights()
     }
 
     println("Logistic 1 weights: \n"+logistic1.weights)
@@ -295,10 +315,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     for (i <- 0 to 100) {
       neuralNet.feedForward()
-      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
       println(i+": "+output.outputs+" ~ "+error)
       neuralNet.backProp()
-      tanh.adjustWeights()
+      tanh.oneshotAdjustWeights()
     }
 
     error should be < 0.05
@@ -322,10 +342,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     for (i <- 0 to 100) {
       neuralNet.feedForward()
-      error = (output.outputs - output.goldOutputs).map(x => Math.abs(x)).sum
+      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
       println(i+": "+output.outputs+" ~ "+error)
       neuralNet.backProp()
-      tanh.adjustWeights()
+      tanh.oneshotAdjustWeights()
     }
 
     error should be < 0.05

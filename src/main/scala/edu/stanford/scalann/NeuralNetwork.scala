@@ -42,8 +42,12 @@ class NeuralNetwork {
   }
 
   def train() {
+    clearGradient()
+
     feedForward()
     backProp()
+    saveGradient()
+
     adjustWeights()
   }
 
@@ -79,6 +83,14 @@ class NeuralNetwork {
 
   def adjustWeights() {
     units.foreach(_.adjustWeights())
+  }
+
+  def saveGradient() {
+    units.foreach(_.saveGradient())
+  }
+
+  def clearGradient() {
+    units.foreach(_.clearGradient())
   }
 
   private var units : List[AbstractUnit] = List()

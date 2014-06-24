@@ -9,6 +9,7 @@ import edu.stanford.scalann.NeuralNetwork
 abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOutputSize : Int) extends AbstractUnit(network) {
 
   val weights : DenseMatrix[Double] = DenseMatrix.rand(initOutputSize,initInputSize) * 0.01
+  val gradients : DenseMatrix[Double] = DenseMatrix.zeros[Double](initOutputSize,initInputSize)
 
   val f : (Double => Double)
   val df : (Double => Double)
@@ -28,11 +29,25 @@ abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOu
   }
 
   override def adjustWeights() {
-    val delta : DenseMatrix[Double] = parentInterface.deltaView(this).toDenseMatrix.t * childInterface.activationView(this).toDenseMatrix
-    delta :*= alpha
-    weights :-= delta
+    weights :-= gradients
   }
 
   override val outputSize: Int = initOutputSize
   override val inputSize: Int = initInputSize
+
+  override def clearGradient() {
+    gradients :*= 0.0
+  }
+
+  override def saveGradient() {
+    val delta : DenseMatrix[Double] = parentInterface.deltaView(this).toDenseMatrix.t * childInterface.activationView(this).toDenseMatrix
+    delta :*= alpha
+    gradients += delta
+  }
+
+  override def oneshotAdjustWeights() {
+    clearGradient()
+    saveGradient()
+    adjustWeights()
+  }
 }

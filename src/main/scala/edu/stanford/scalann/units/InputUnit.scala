@@ -21,6 +21,4 @@ class InputUnit(network : NeuralNetwork, size : Int) extends AbstractUnit(networ
 
   override val outputSize: Int = size
   override val inputSize: Int = 0
-
-  override def adjustWeights() {}
 }
