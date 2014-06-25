@@ -3,6 +3,27 @@ package edu.stanford.scalann.data
 import edu.stanford.scalann.{NeuralNetwork, WeightsManager}
 import breeze.linalg._
 
+object DataSet {
+  def createSimpleDataset(parent : NeuralNetwork, input : List[DenseVector[Double]], output : List[DenseVector[Double]]) : DataSet = {
+    assert(parent.inputUnits.length == 1, "createSimpleDataset only works with a single input unit")
+    assert(parent.outputUnits.length == 1, "createSimpleDataset only works with a single output unit")
+    assert(input.length > 0, "createSimpleDataset needs atleast one input instance")
+    assert(output.length > 0, "createSimpleDataset needs atleast one output instance")
+    assert(output.length == input.length, "createSimpleDataset needs the same number of input and output instances")
+    assert(input.forall(v => v.length == parent.inputUnits(0).outputSize), "createSimpleDataset needs the size of input unit and input data to match")
+    assert(output.forall(v => v.length == parent.outputUnits(0).inputSize), "createSimpleDataset needs the size of output unit and output data to match")
+
+    val ds = new DataSet()
+    (0 to input.length-1).foreach(i => {
+      val clone = NeuralNetwork.clone(parent)
+      clone.inputUnits(0).inputs := input(i)
+      clone.outputUnits(0).goldOutputs := output(i)
+      ds.addNetwork(clone)
+    })
+    ds
+  }
+}
+
 /**
  * Contains all the different interesting things about training data, and a means to train it up.
  *
@@ -29,10 +50,19 @@ class DataSet extends Serializable {
     weightsManagers.foreach(_.adjustWeights())
   }
 
-  def train(iterations : Int) : Double = {
+  def train(iterations : Int, debug : Boolean = false) : Double = {
     for (i <- 0 to iterations) {
       update()
-      println()
+      if (debug) {
+        println("--------\nROUND "+i+"\n----------")
+        println("ERROR: "+squaredError())
+        for (net <- networks) {
+          println("---")
+          println("Inputs: "+net.inputUnits(0).inputs.toDenseMatrix)
+          println("Gold Outputs: "+net.outputUnits(0).goldOutputs.toDenseMatrix)
+          println("Actual Outputs: "+net.outputUnits(0).outputs.toDenseMatrix)
+        }
+      }
     }
     squaredError()
   }

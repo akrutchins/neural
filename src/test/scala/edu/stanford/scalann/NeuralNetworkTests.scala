@@ -159,7 +159,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet)
     val error = dataset.train(100)
 
-    error should be < 0.05
+    error should be < 0.01
   }
 
   it should "not modify weightsManager.weights on an unobserved output" in {
@@ -200,7 +200,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet)
     val error = dataset.train(100)
 
-    error should be < 0.05
+    error should be < 0.01
   }
 
   "A Double Layer Logistic Neural Network" should "correct weights on both logistic layers" in {
@@ -232,7 +232,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     println("Logistic 1 weightsManager.weights: \n"+logistic1.weightsManager.weights)
     println("Logistic 2 weightsManager.weights: \n"+logistic2.weightsManager.weights)
 
-    error should be < 0.05
+    error should be < 0.01
   }
 
   "A Complex Logistic Neural Network" should "converge to the correct output value" in {
@@ -264,7 +264,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     println("Logistic 2 weightsManager.weights: \n"+logistic2.weightsManager.weights)
     println("Logistic 3 weightsManager.weights: \n"+logistic3.weightsManager.weights)
 
-    error should be < 0.05
+    error should be < 0.01
   }
 
   "A Single Layer Tanh Neural Network" should "correct weights on a tanh layer" in {
@@ -287,7 +287,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet)
     val error = dataset.train(100)
 
-    error should be < 0.05
+    error should be < 0.01
   }
 
   "A Mixed Tanh and Logistic Neural Network" should "converge to the correct outputs" in {
@@ -308,7 +308,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet)
     val error = dataset.train(100)
 
-    error should be < 0.05
+    error should be < 0.01
   }
 
   "A Neural Network cloned multiple times" should "work without hiccup" in {
@@ -336,6 +336,31 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet3)
     val error = dataset.train(100)
 
-    error should be < 0.05
+    error should be < 0.01
+  }
+
+  "A double layer logistic neural network dataset" should "memorize XOR" in {
+    val xorNet : NeuralNetwork = new NeuralNetwork()
+    xorNet.inputUnit(2) >> xorNet.logisticUnit(2,8) >> xorNet.logisticUnit(8,1) >> xorNet.outputUnit(1)
+
+    val xorDs : DataSet = DataSet.createSimpleDataset(
+      xorNet,
+      List(
+        DenseVector[Double](0,0),
+        DenseVector[Double](1,0),
+        DenseVector[Double](0,1),
+        DenseVector[Double](1,1)
+      ),
+      List(
+        DenseVector[Double](1),
+        DenseVector[Double](0),
+        DenseVector[Double](0),
+        DenseVector[Double](1)
+      )
+    )
+
+    val error = xorDs.train(1000)
+
+    error should be < 0.01
   }
 }

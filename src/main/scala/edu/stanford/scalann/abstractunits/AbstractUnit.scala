@@ -14,12 +14,12 @@ abstract class AbstractUnit(network : NeuralNetwork) extends Serializable {
   val inputSize : Int
   val outputSize : Int
 
-  def >>(unit : AbstractUnit) : Interface = {
+  def >>(unit : AbstractUnit) : AbstractUnit = {
     assert(outputSize == unit.inputSize, "Shorthand >> can only be used when output size matches input size, "+outputSize+" != "+inputSize)
     val interface : Interface = network.interface(outputSize)
     unit.setChildInterface(interface,0)
     setParentInterface(interface,0)
-    interface
+    unit
   }
 
   var parentInterface : Interface = null
