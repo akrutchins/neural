@@ -9,10 +9,7 @@ abstract class AbstractUnit(network : NeuralNetwork) {
 
   def feedForward() {}
   def backProp() {}
-  def adjustWeights() {}
-  def clearGradient() {}
   def saveGradient() {}
-  def oneshotAdjustWeights() {}
 
   val inputSize : Int
   val outputSize : Int

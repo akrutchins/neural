@@ -3,6 +3,7 @@ package edu.stanford.scalann
 import org.scalatest._
 import breeze.linalg._
 import edu.stanford.scalann.units._
+import edu.stanford.scalann.data.DataSet
 
 /**
  * Neural Network test cases
@@ -105,10 +106,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     linear >> output
 
     input.inputs = DenseVector[Double](1,2)
-    linear.weights(0,0) = 1
-    linear.weights(0,1) = 0
-    linear.weights(1,0) = 0
-    linear.weights(1,1) = 1
+    linear.weightsManager.weights(0,0) = 1
+    linear.weightsManager.weights(0,1) = 0
+    linear.weightsManager.weights(1,0) = 0
+    linear.weightsManager.weights(1,1) = 1
 
     neuralNet.feedForward()
 
@@ -125,10 +126,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     linear >> output
 
     input.inputs = DenseVector[Double](1,2)
-    linear.weights(0,0) = 1
-    linear.weights(0,1) = 0
-    linear.weights(1,0) = 0
-    linear.weights(1,1) = 1
+    linear.weightsManager.weights(0,0) = 1
+    linear.weightsManager.weights(0,1) = 0
+    linear.weightsManager.weights(1,0) = 0
+    linear.weightsManager.weights(1,1) = 1
     output.goldOutputs = DenseVector[Double](2,1)
 
     neuralNet.feedForward()
@@ -138,7 +139,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     input.deltas should equal (DenseVector[Double](-1,1))
   }
 
-  it should "correct weights on a linear layer" in {
+  it should "correct weightsManager.weights on a linear layer" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val linear : LinearUnit = neuralNet.linearUnit(2,2)
@@ -148,26 +149,20 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     linear >> output
 
     input.inputs = DenseVector[Double](1,2)
-    linear.weights(0,0) = 1
-    linear.weights(0,1) = 2
-    linear.weights(1,0) = 3
-    linear.weights(1,1) = 4
+    linear.weightsManager.weights(0,0) = 1
+    linear.weightsManager.weights(0,1) = 2
+    linear.weightsManager.weights(1,0) = 3
+    linear.weightsManager.weights(1,1) = 4
     output.goldOutputs = DenseVector[Double](2,1)
 
-    var error : Double = 0.0
-
-    for (i <- 0 to 100) {
-      neuralNet.feedForward()
-      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
-      println(i+": "+output.outputs+" ~ "+error)
-      neuralNet.backProp()
-      linear.oneshotAdjustWeights()
-    }
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
 
     error should be < 0.05
   }
 
-  it should "not modify weights on an unobserved output" in {
+  it should "not modify weightsManager.weights on an unobserved output" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val linear : LinearUnit = neuralNet.linearUnit(2,2)
@@ -179,15 +174,13 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     input.inputs = DenseVector[Double](1,2)
     output.goldOutputs = null
 
-    var error : Double = 0.0
-
     neuralNet.feedForward()
     neuralNet.backProp()
 
     input.deltas should equal (DenseVector[Double](0,0))
   }
 
-  "A Single Layer Logistic Neural Network" should "correct weights on a logistic layer" in {
+  "A Single Layer Logistic Neural Network" should "correct weightsManager.weights on a logistic layer" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val logistic : LogisticUnit = neuralNet.logisticUnit(2,2)
@@ -197,26 +190,20 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     logistic >> output
 
     input.inputs = DenseVector[Double](1,2)
-    logistic.weights(0,0) = 1
-    logistic.weights(0,1) = 0
-    logistic.weights(1,0) = 0
-    logistic.weights(1,1) = 1
+    logistic.weightsManager.weights(0,0) = 1
+    logistic.weightsManager.weights(0,1) = 0
+    logistic.weightsManager.weights(1,0) = 0
+    logistic.weightsManager.weights(1,1) = 1
     output.goldOutputs = DenseVector[Double](0.75,0.5)
 
-    var error : Double = 0.0
-
-    for (i <- 0 to 100) {
-      neuralNet.feedForward()
-      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
-      println(i+": "+output.outputs+" ~ "+error)
-      neuralNet.backProp()
-      logistic.oneshotAdjustWeights()
-    }
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
 
     error should be < 0.05
   }
 
-  "A Double Layer Logistic Neural Network" should "correct weights on both logistic layers" in {
+  "A Double Layer Logistic Neural Network" should "correct weightsManager.weights on both logistic layers" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val logistic1 : LogisticUnit = neuralNet.logisticUnit(2,2)
@@ -228,29 +215,22 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     logistic2 >> output
 
     input.inputs = DenseVector[Double](1,2)
-    logistic1.weights(0,0) = 1
-    logistic1.weights(0,1) = 0
-    logistic1.weights(1,0) = 0
-    logistic1.weights(1,1) = 1
-    logistic2.weights(0,0) = 1
-    logistic2.weights(0,1) = 0
-    logistic2.weights(1,0) = 0
-    logistic2.weights(1,1) = 1
+    logistic1.weightsManager.weights(0,0) = 1
+    logistic1.weightsManager.weights(0,1) = 0
+    logistic1.weightsManager.weights(1,0) = 0
+    logistic1.weightsManager.weights(1,1) = 1
+    logistic2.weightsManager.weights(0,0) = 1
+    logistic2.weightsManager.weights(0,1) = 0
+    logistic2.weightsManager.weights(1,0) = 0
+    logistic2.weightsManager.weights(1,1) = 1
     output.goldOutputs = DenseVector[Double](0.75,0.5)
 
-    var error : Double = 0.0
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
 
-    for (i <- 0 to 100) {
-      neuralNet.feedForward()
-      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
-      println(i+": "+output.outputs+" ~ "+error)
-      neuralNet.backProp()
-      logistic1.oneshotAdjustWeights()
-      logistic2.oneshotAdjustWeights()
-    }
-
-    println("Logistic 1 weights: \n"+logistic1.weights)
-    println("Logistic 2 weights: \n"+logistic2.weights)
+    println("Logistic 1 weightsManager.weights: \n"+logistic1.weightsManager.weights)
+    println("Logistic 2 weightsManager.weights: \n"+logistic2.weightsManager.weights)
 
     error should be < 0.05
   }
@@ -276,26 +256,18 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     input.inputs = DenseVector[Double](1,2)
     output.goldOutputs = DenseVector[Double](0.75,0.5)
 
-    var error : Double = 0.0
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
 
-    for (i <- 0 to 100) {
-      neuralNet.feedForward()
-      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
-      println(i+": "+output.outputs+" ~ "+error)
-      neuralNet.backProp()
-      logistic1.oneshotAdjustWeights()
-      logistic2.oneshotAdjustWeights()
-      logistic3.oneshotAdjustWeights()
-    }
-
-    println("Logistic 1 weights: \n"+logistic1.weights)
-    println("Logistic 2 weights: \n"+logistic2.weights)
-    println("Logistic 3 weights: \n"+logistic3.weights)
+    println("Logistic 1 weightsManager.weights: \n"+logistic1.weightsManager.weights)
+    println("Logistic 2 weightsManager.weights: \n"+logistic2.weightsManager.weights)
+    println("Logistic 3 weightsManager.weights: \n"+logistic3.weightsManager.weights)
 
     error should be < 0.05
   }
 
-  "A Single Layer Tanh Neural Network" should "correct weights on a tanh layer" in {
+  "A Single Layer Tanh Neural Network" should "correct weightsManager.weights on a tanh layer" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val tanh : TanhUnit = neuralNet.tanhUnit(2,2)
@@ -305,21 +277,15 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     tanh >> output
 
     input.inputs = DenseVector[Double](1,2)
-    tanh.weights(0,0) = 1
-    tanh.weights(0,1) = 0
-    tanh.weights(1,0) = 0
-    tanh.weights(1,1) = 1
+    tanh.weightsManager.weights(0,0) = 1
+    tanh.weightsManager.weights(0,1) = 0
+    tanh.weightsManager.weights(1,0) = 0
+    tanh.weightsManager.weights(1,1) = 1
     output.goldOutputs = DenseVector[Double](-0.75,0.5)
 
-    var error : Double = 0.0
-
-    for (i <- 0 to 100) {
-      neuralNet.feedForward()
-      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
-      println(i+": "+output.outputs+" ~ "+error)
-      neuralNet.backProp()
-      tanh.oneshotAdjustWeights()
-    }
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
 
     error should be < 0.05
   }
@@ -338,15 +304,9 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     input.inputs = DenseVector[Double](1,2)
     output.goldOutputs = DenseVector[Double](-0.75,0.5)
 
-    var error : Double = 0.0
-
-    for (i <- 0 to 100) {
-      neuralNet.feedForward()
-      error = sum((output.outputs - output.goldOutputs).map(x => Math.abs(x)))
-      println(i+": "+output.outputs+" ~ "+error)
-      neuralNet.backProp()
-      tanh.oneshotAdjustWeights()
-    }
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
 
     error should be < 0.05
   }

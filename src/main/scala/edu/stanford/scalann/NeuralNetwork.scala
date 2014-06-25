@@ -1,7 +1,9 @@
 package edu.stanford.scalann
 
 import edu.stanford.scalann.units._
-import edu.stanford.scalann.abstractunits.AbstractUnit
+import edu.stanford.scalann.abstractunits.{WeightedUnit, AbstractUnit}
+
+import breeze.linalg._
 
 /**
  * Central orchestration for the neural network architectures
@@ -14,41 +16,55 @@ class NeuralNetwork {
 
   def inputUnit(size : Int) : InputUnit = {
     val u = new InputUnit(this, size)
-    units = units :+ u
+    units :+= u
     u
   }
   def outputUnit(size : Int) : OutputUnit = {
     val u = new OutputUnit(this, size)
-    units = units :+ u
+    units :+= u
+    outputUnits :+= u
     u
   }
   def logisticUnit(inputSize : Int, outputSize : Int) : LogisticUnit = {
     val u = new LogisticUnit(this, inputSize, outputSize)
-    units = units :+ u
+    units :+= u
+    weightsManagers :+= u.weightsManager
     u
   }
   def tanhUnit(inputSize : Int, outputSize : Int) : TanhUnit = {
     val u = new TanhUnit(this, inputSize, outputSize)
-    units = units :+ u
+    units :+= u
+    weightsManagers :+= u.weightsManager
     u
   }
   def linearUnit(inputSize : Int, outputSize : Int) : LinearUnit = {
     val u = new LinearUnit(this, inputSize, outputSize)
-    units = units :+ u
+    units :+= u
+    weightsManagers :+= u.weightsManager
     u
   }
   def interface(size : Int) : Interface = {
     new Interface(size)
   }
 
-  def train() {
-    clearGradient()
+  // Creates a duplicate unit, using the existing weights manager
+  // Can clone units from another network
 
+  def cloneUnit[T <: WeightedUnit](unit : T) : T = {
+    val clone : T = unit match {
+      case u : LogisticUnit => new LogisticUnit(this, u.inputSize, u.outputSize, u.weightsManager).asInstanceOf[T]
+      case u : TanhUnit => new TanhUnit(this, u.inputSize, u.outputSize, u.weightsManager).asInstanceOf[T]
+      case u : LinearUnit => new LinearUnit(this, u.inputSize, u.outputSize, u.weightsManager).asInstanceOf[T]
+    }
+    units :+= clone
+    if (!weightsManagers.contains(clone.weightsManager)) weightsManagers :+= clone.weightsManager
+    clone
+  }
+
+  def saveGradient() {
     feedForward()
     backProp()
-    saveGradient()
-
-    adjustWeights()
+    units.foreach(_.saveGradient())
   }
 
   def feedForward() {
@@ -81,17 +97,11 @@ class NeuralNetwork {
     }
   }
 
-  def adjustWeights() {
-    units.foreach(_.adjustWeights())
+  def squaredError() : Double = {
+    sum(outputUnits.map(_.squaredError()))
   }
 
-  def saveGradient() {
-    units.foreach(_.saveGradient())
-  }
-
-  def clearGradient() {
-    units.foreach(_.clearGradient())
-  }
-
-  private var units : List[AbstractUnit] = List()
+  var units : List[AbstractUnit] = List()
+  var outputUnits : List[OutputUnit] = List()
+  var weightsManagers : List[WeightsManager] = List()
 }

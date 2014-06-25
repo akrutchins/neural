@@ -1,12 +1,12 @@
 package edu.stanford.scalann.units
 
-import edu.stanford.scalann.NeuralNetwork
+import edu.stanford.scalann.{WeightsManager, NeuralNetwork}
 import edu.stanford.scalann.abstractunits.WeightedUnit
 
 /**
- * Created by Keenon on 6/24/14.
+ * A weighted unit that uses Tanh to scale outputs
  */
-class TanhUnit(network : NeuralNetwork, initInputSize : Int, initOutputSize : Int) extends WeightedUnit(network,initInputSize,initOutputSize) {
+class TanhUnit(network : NeuralNetwork, initInputSize : Int, initOutputSize : Int, initWeightsManager : WeightsManager = null) extends WeightedUnit(network,initInputSize,initOutputSize,initWeightsManager) {
   alpha = 0.1
   override val f : (Double => Double) = (x : Double) => Math.tanh(x)
   override val df : (Double => Double) = (f : Double) => 1-(f*f)

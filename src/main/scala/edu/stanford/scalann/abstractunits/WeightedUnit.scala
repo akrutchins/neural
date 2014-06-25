@@ -1,15 +1,12 @@
 package edu.stanford.scalann.abstractunits
 
 import breeze.linalg._
-import edu.stanford.scalann.NeuralNetwork
+import edu.stanford.scalann.{WeightsManager, NeuralNetwork}
 
 /**
  * Does the actual work of the neural network, calculating neuron activations
  */
-abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOutputSize : Int) extends AbstractUnit(network) {
-
-  val weights : DenseMatrix[Double] = DenseMatrix.rand(initOutputSize,initInputSize) * 0.01
-  val gradients : DenseMatrix[Double] = DenseMatrix.zeros[Double](initOutputSize,initInputSize)
+abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOutputSize : Int, initWeightsManager : WeightsManager = null) extends AbstractUnit(network) {
 
   val f : (Double => Double)
   val df : (Double => Double)
@@ -17,7 +14,7 @@ abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOu
   var alpha : Double = 2.0
 
   override def feedForward() {
-    val z = weights * childInterface.activationView(this)
+    val z = weightsManager.weights * childInterface.activationView(this)
     parentInterface.activationView(this) := z.map(f)
   }
 
@@ -25,29 +22,17 @@ abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOu
     // Complete the parent's backprop calculation with the derivative of the inputs
     parentInterface.deltaView(this) :*= parentInterface.activationView(this).map(df)
     // Propagate down a partial backprop, without the derivative of the inputs (next layer will handle that)
-    childInterface.deltaView(this) := (weights.t * parentInterface.deltaView(this))
-  }
-
-  override def adjustWeights() {
-    weights :-= gradients
+    childInterface.deltaView(this) := (weightsManager.weights.t * parentInterface.deltaView(this))
   }
 
   override val outputSize: Int = initOutputSize
   override val inputSize: Int = initInputSize
 
-  override def clearGradient() {
-    gradients :*= 0.0
-  }
-
   override def saveGradient() {
     val delta : DenseMatrix[Double] = parentInterface.deltaView(this).toDenseMatrix.t * childInterface.activationView(this).toDenseMatrix
     delta :*= alpha
-    gradients += delta
+    weightsManager.gradients += delta
   }
 
-  override def oneshotAdjustWeights() {
-    clearGradient()
-    saveGradient()
-    adjustWeights()
-  }
+  val weightsManager : WeightsManager = if (initWeightsManager != null) initWeightsManager else new WeightsManager(inputSize,outputSize)
 }

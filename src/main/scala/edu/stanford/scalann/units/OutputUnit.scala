@@ -1,6 +1,6 @@
 package edu.stanford.scalann.units
 
-import breeze.linalg.DenseVector
+import breeze.linalg._
 import edu.stanford.scalann.NeuralNetwork
 import edu.stanford.scalann.abstractunits.AbstractUnit
 
@@ -28,5 +28,9 @@ class OutputUnit(network : NeuralNetwork, size : Int) extends AbstractUnit(netwo
     else {
       childInterface.deltaView(this) := 0.0
     }
+  }
+
+  def squaredError() : Double = {
+    sum((outputs - goldOutputs).map(x => x*x))
   }
 }
