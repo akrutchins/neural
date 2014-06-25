@@ -9,11 +9,13 @@ import edu.stanford.scalann.abstractunits.AbstractUnit
  *
  * Keeps track of mappings internally
  */
-class Interface(size : Int) {
+class Interface(initSize : Int) {
+
+  val size = initSize
   private val activation : DenseVector[Double] = DenseVector.zeros[Double](size)
   private val delta : DenseVector[Double] = DenseVector.zeros[Double](size)
 
-  private val map : mutable.ParMap[AbstractUnit,(Int,Int)] = mutable.ParMap()
+  val map : mutable.ParMap[AbstractUnit,(Int,Int)] = mutable.ParMap()
 
   def activationView(unit : AbstractUnit) : DenseVector[Double] = {
     assert(map.contains(unit), "Interface must contain mapping for unit requesting an activation view")
@@ -29,5 +31,9 @@ class Interface(size : Int) {
     assert(start >= 0 && end >= 0 && start <= end && end < size, "addView parameters must be within bounds: ("+start+","+end+"), size "+size)
     assert(!map.contains(unit), "Interface can't have multiple mappings for a unit")
     map.put(unit,(start,end))
+  }
+
+  def getStartOffset(unit : AbstractUnit) : Int = {
+    map(unit)._1
   }
 }

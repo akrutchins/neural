@@ -5,7 +5,7 @@ import edu.stanford.scalann.{Interface, NeuralNetwork}
 /**
  * Handles all the common functionality for elements of the neural network
  */
-abstract class AbstractUnit(network : NeuralNetwork) {
+abstract class AbstractUnit(network : NeuralNetwork) extends Serializable {
 
   def feedForward() {}
   def backProp() {}

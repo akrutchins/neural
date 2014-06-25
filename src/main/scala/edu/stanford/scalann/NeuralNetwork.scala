@@ -5,18 +5,42 @@ import edu.stanford.scalann.abstractunits.{WeightedUnit, AbstractUnit}
 
 import breeze.linalg._
 
+object NeuralNetwork {
+  def clone(parent : NeuralNetwork) : NeuralNetwork = {
+    val child : NeuralNetwork = new NeuralNetwork()
+
+    // Create a bunch of identically sized interfaces
+    val parentToChildInterfaceMappings : Map[Interface,Interface] = Map(parent.interfaces.map(i => (i,new Interface(i.size))) : _*)
+
+    // Map new units to interface clones
+    parent.units.foreach(p => {
+      val c = child.cloneUnit(p)
+      if (p.childInterface != null) c.setChildInterface(parentToChildInterfaceMappings(p.childInterface),p.childInterface.getStartOffset(p))
+      if (p.parentInterface != null) c.setParentInterface(parentToChildInterfaceMappings(p.parentInterface),p.parentInterface.getStartOffset(p))
+    })
+
+    child.interfaces = parentToChildInterfaceMappings.values.toList
+    child
+  }
+}
+
 /**
  * Central orchestration for the neural network architectures
- *
- * Created by Keenon on 6/22/14.
  */
 class NeuralNetwork {
+
+  var units : List[AbstractUnit] = List()
+  var inputUnits : List[InputUnit] = List()
+  var outputUnits : List[OutputUnit] = List()
+  var interfaces : List[Interface] = List()
+  var weightsManagers : List[WeightsManager] = List()
 
   // Public interface
 
   def inputUnit(size : Int) : InputUnit = {
     val u = new InputUnit(this, size)
     units :+= u
+    inputUnits :+= u
     u
   }
   def outputUnit(size : Int) : OutputUnit = {
@@ -44,20 +68,34 @@ class NeuralNetwork {
     u
   }
   def interface(size : Int) : Interface = {
-    new Interface(size)
+    val i = new Interface(size)
+    interfaces :+= i
+    i
   }
 
   // Creates a duplicate unit, using the existing weights manager
   // Can clone units from another network
 
-  def cloneUnit[T <: WeightedUnit](unit : T) : T = {
+  def cloneUnit[T <: AbstractUnit](unit : T) : T = {
     val clone : T = unit match {
       case u : LogisticUnit => new LogisticUnit(this, u.inputSize, u.outputSize, u.weightsManager).asInstanceOf[T]
       case u : TanhUnit => new TanhUnit(this, u.inputSize, u.outputSize, u.weightsManager).asInstanceOf[T]
       case u : LinearUnit => new LinearUnit(this, u.inputSize, u.outputSize, u.weightsManager).asInstanceOf[T]
+      case u : InputUnit =>
+        val inputUnit = new InputUnit(this, u.inputSize)
+        inputUnits :+= inputUnit
+        inputUnit.asInstanceOf[T]
+      case u : OutputUnit =>
+        val outputUnit = new OutputUnit(this, u.outputSize)
+        outputUnits :+= outputUnit
+        outputUnit.asInstanceOf[T]
     }
     units :+= clone
-    if (!weightsManagers.contains(clone.weightsManager)) weightsManagers :+= clone.weightsManager
+    unit match {
+      case w : WeightedUnit =>
+        if (!weightsManagers.contains(w.weightsManager)) weightsManagers :+= w.weightsManager
+      case _ => // do nothing
+    }
     clone
   }
 
@@ -100,8 +138,4 @@ class NeuralNetwork {
   def squaredError() : Double = {
     sum(outputUnits.map(_.squaredError()))
   }
-
-  var units : List[AbstractUnit] = List()
-  var outputUnits : List[OutputUnit] = List()
-  var weightsManagers : List[WeightsManager] = List()
 }

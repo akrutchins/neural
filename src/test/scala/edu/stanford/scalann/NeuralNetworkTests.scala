@@ -180,7 +180,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     input.deltas should equal (DenseVector[Double](0,0))
   }
 
-  "A Single Layer Logistic Neural Network" should "correct weightsManager.weights on a logistic layer" in {
+  "A Single Layer Logistic Neural Network" should "correct weights on a logistic layer" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val logistic : LogisticUnit = neuralNet.logisticUnit(2,2)
@@ -203,7 +203,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     error should be < 0.05
   }
 
-  "A Double Layer Logistic Neural Network" should "correct weightsManager.weights on both logistic layers" in {
+  "A Double Layer Logistic Neural Network" should "correct weights on both logistic layers" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val logistic1 : LogisticUnit = neuralNet.logisticUnit(2,2)
@@ -267,7 +267,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     error should be < 0.05
   }
 
-  "A Single Layer Tanh Neural Network" should "correct weightsManager.weights on a tanh layer" in {
+  "A Single Layer Tanh Neural Network" should "correct weights on a tanh layer" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val tanh : TanhUnit = neuralNet.tanhUnit(2,2)
@@ -306,6 +306,34 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
+    val error = dataset.train(100)
+
+    error should be < 0.05
+  }
+
+  "A Neural Network cloned multiple times" should "work without hiccup" in {
+    val neuralNet : NeuralNetwork = new NeuralNetwork
+    val input : InputUnit = neuralNet.inputUnit(2)
+    val logistic : LogisticUnit = neuralNet.logisticUnit(2,3)
+    val tanh : TanhUnit = neuralNet.tanhUnit(3,2)
+    val output : OutputUnit = neuralNet.outputUnit(2)
+
+    input >> logistic
+    logistic >> tanh
+    tanh >> output
+
+    val neuralNet2 : NeuralNetwork = NeuralNetwork.clone(neuralNet)
+    val neuralNet3 : NeuralNetwork = NeuralNetwork.clone(neuralNet2)
+
+    neuralNet3.units.intersect(neuralNet2.units).length should equal (0)
+    neuralNet3.units.length should equal (4)
+    neuralNet3.units.intersect(neuralNet.units).length should equal (0)
+
+    neuralNet3.inputUnits(0).inputs = DenseVector[Double](1,2)
+    neuralNet3.outputUnits(0).goldOutputs = DenseVector[Double](-0.75,0.5)
+
+    val dataset : DataSet = new DataSet()
+    dataset.addNetwork(neuralNet3)
     val error = dataset.train(100)
 
     error should be < 0.05
