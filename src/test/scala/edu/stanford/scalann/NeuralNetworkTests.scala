@@ -139,7 +139,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     input.deltas should equal (DenseVector[Double](-1,1))
   }
 
-  it should "correct weightsManager.weights on a linear layer" in {
+  it should "correct weights on a linear layer" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val linear : LinearUnit = neuralNet.linearUnit(2,2)
@@ -157,12 +157,13 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
+    dataset.alpha = 0.01
     val error = dataset.train(100)
 
     error should be < 0.01
   }
 
-  it should "not modify weightsManager.weights on an unobserved output" in {
+  it should "not modify weights on an unobserved output" in {
     val neuralNet : NeuralNetwork = new NeuralNetwork
     val input : InputUnit = neuralNet.inputUnit(2)
     val linear : LinearUnit = neuralNet.linearUnit(2,2)
@@ -229,8 +230,8 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet)
     val error = dataset.train(100)
 
-    println("Logistic 1 weightsManager.weights: \n"+logistic1.weightsManager.weights)
-    println("Logistic 2 weightsManager.weights: \n"+logistic2.weightsManager.weights)
+    println("Logistic 1 weights: \n"+logistic1.weightsManager.weights)
+    println("Logistic 2 weights: \n"+logistic2.weightsManager.weights)
 
     error should be < 0.01
   }
@@ -260,9 +261,9 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
     dataset.addNetwork(neuralNet)
     val error = dataset.train(100)
 
-    println("Logistic 1 weightsManager.weights: \n"+logistic1.weightsManager.weights)
-    println("Logistic 2 weightsManager.weights: \n"+logistic2.weightsManager.weights)
-    println("Logistic 3 weightsManager.weights: \n"+logistic3.weightsManager.weights)
+    println("Logistic 1 weights: \n"+logistic1.weightsManager.weights)
+    println("Logistic 2 weights: \n"+logistic2.weightsManager.weights)
+    println("Logistic 3 weights: \n"+logistic3.weightsManager.weights)
 
     error should be < 0.01
   }
@@ -285,6 +286,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
+    dataset.alpha = 0.1
     val error = dataset.train(100)
 
     error should be < 0.01
@@ -340,11 +342,11 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
   }
 
   "A double layer logistic neural network dataset" should "memorize XOR" in {
-    val xorNet : NeuralNetwork = new NeuralNetwork()
-    xorNet.inputUnit(2) >> xorNet.logisticUnit(2,8) >> xorNet.logisticUnit(8,1) >> xorNet.outputUnit(1)
+    val prototype : NeuralNetwork = new NeuralNetwork()
+    prototype.inputUnit(2) >> prototype.logisticUnit(2,8) >> prototype.logisticUnit(8,1) >> prototype.outputUnit(1)
 
-    val xorDs : DataSet = DataSet.createSimpleDataset(
-      xorNet,
+    val xor : DataSet = DataSet.createSimpleDataset(
+      prototype,
       List(
         DenseVector[Double](0,0),
         DenseVector[Double](1,0),
@@ -359,8 +361,36 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
       )
     )
 
-    val error = xorDs.train(1000)
+    xor.alpha = 50.0
+    val error = xor.train(10000)
 
     error should be < 0.01
+  }
+
+  it should "pass a manual gradient check on the XOR data" in {
+    val prototype : NeuralNetwork = new NeuralNetwork()
+    prototype.inputUnit(2) >> prototype.logisticUnit(2,8) >> prototype.logisticUnit(8,1) >> prototype.outputUnit(1)
+
+    val xor : DataSet = DataSet.createSimpleDataset(
+      prototype,
+      List(
+        DenseVector[Double](0,0),
+        DenseVector[Double](1,0),
+        DenseVector[Double](0,1),
+        DenseVector[Double](1,1)
+      ),
+      List(
+        DenseVector[Double](1),
+        DenseVector[Double](0),
+        DenseVector[Double](0),
+        DenseVector[Double](1)
+      )
+    )
+
+    val error = xor.checkGradient()
+
+    println("Gradient check error is "+error)
+
+    error should be < 0.2
   }
 }

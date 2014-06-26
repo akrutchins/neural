@@ -11,10 +11,8 @@ abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOu
   val f : (Double => Double)
   val df : (Double => Double)
 
-  var alpha : Double = 2.0
-
   override def feedForward() {
-    val z = weightsManager.weights * childInterface.activationView(this)
+    val z = (weightsManager.weights * childInterface.activationView(this)) + weightsManager.intercepts
     parentInterface.activationView(this) := z.map(f)
   }
 
@@ -30,8 +28,7 @@ abstract class WeightedUnit(network : NeuralNetwork, initInputSize : Int, initOu
 
   override def saveGradient() {
     val delta : DenseMatrix[Double] = parentInterface.deltaView(this).toDenseMatrix.t * childInterface.activationView(this).toDenseMatrix
-    delta :*= alpha
-    weightsManager.gradients += delta
+    weightsManager.contributeGradient(delta, parentInterface.deltaView(this))
   }
 
   val weightsManager : WeightsManager = if (initWeightsManager != null) initWeightsManager else new WeightsManager(inputSize,outputSize)
