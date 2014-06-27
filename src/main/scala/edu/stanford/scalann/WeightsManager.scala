@@ -25,17 +25,16 @@ class WeightsManager(initInputSize : Int, initOutputSize : Int) {
     }
   }
 
-  def postProcessGradient(alpha : Double, lambda : Double) {
+  def averageGradientsFromContributors() {
     this.synchronized {
-      gradients :*= (alpha / contributors.asInstanceOf[Double])
-      interceptGradients :*= (alpha / contributors.asInstanceOf[Double])
-      gradients :+= (weights * lambda)
+      gradients :/= contributors.asInstanceOf[Double]
+      interceptGradients :/= contributors.asInstanceOf[Double]
     }
   }
 
-  def adjustWeights() {
-    weights :-= gradients
-    intercepts :-= interceptGradients
+  def adjustWeights(alpha : Double) {
+    weights :-= (gradients :* alpha)
+    intercepts :-= (interceptGradients :* alpha)
   }
 
   def clearGradient() {

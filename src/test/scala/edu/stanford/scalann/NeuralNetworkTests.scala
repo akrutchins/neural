@@ -4,6 +4,7 @@ import org.scalatest._
 import breeze.linalg._
 import edu.stanford.scalann.units._
 import edu.stanford.scalann.data.DataSet
+import edu.stanford.scalann.optimization._
 
 /**
  * Neural Network test cases
@@ -157,8 +158,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
-    dataset.alpha = 0.01
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    optimizer.alpha = 0.2
+    val error : Double = optimizer.optimize(dataset)
 
     error should be < 0.01
   }
@@ -199,7 +202,9 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    val error : Double = optimizer.optimize(dataset)
 
     error should be < 0.01
   }
@@ -228,7 +233,9 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    val error : Double = optimizer.optimize(dataset)
 
     println("Logistic 1 weights: \n"+logistic1.weightsManager.weights)
     println("Logistic 2 weights: \n"+logistic2.weightsManager.weights)
@@ -259,7 +266,9 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    val error : Double = optimizer.optimize(dataset)
 
     println("Logistic 1 weights: \n"+logistic1.weightsManager.weights)
     println("Logistic 2 weights: \n"+logistic2.weightsManager.weights)
@@ -286,8 +295,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
-    dataset.alpha = 0.1
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    optimizer.alpha = 0.1
+    val error : Double = optimizer.optimize(dataset)
 
     error should be < 0.01
   }
@@ -308,7 +319,9 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet)
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    val error : Double = optimizer.optimize(dataset)
 
     error should be < 0.01
   }
@@ -336,14 +349,17 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val dataset : DataSet = new DataSet()
     dataset.addNetwork(neuralNet3)
-    val error = dataset.train(100)
+
+    val optimizer : GradientDescentOptimizer = new GradientDescentOptimizer()
+    val error : Double = optimizer.optimize(dataset)
 
     error should be < 0.01
   }
 
   "A double layer logistic neural network dataset" should "memorize XOR" in {
     val prototype : NeuralNetwork = new NeuralNetwork()
-    prototype.inputUnit(2) >> prototype.logisticUnit(2,8) >> prototype.logisticUnit(8,1) >> prototype.outputUnit(1)
+    val hiddenLayerSize : Int = 4
+    prototype.inputUnit(2) >> prototype.logisticUnit(2,hiddenLayerSize) >> prototype.logisticUnit(hiddenLayerSize,hiddenLayerSize) >> prototype.logisticUnit(hiddenLayerSize,1) >> prototype.outputUnit(1)
 
     val xor : DataSet = DataSet.createSimpleDataset(
       prototype,
@@ -361,8 +377,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
       )
     )
 
-    xor.alpha = 50.0
-    val error = xor.train(10000)
+    val optimizer : AbstractOptimizer = new AdaGradOptimizer()
+    optimizer.alpha = 1.0
+    optimizer.iterations = 1000
+    val error : Double = optimizer.optimize(xor,debug = true)
 
     error should be < 0.01
   }
@@ -387,10 +405,10 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
       )
     )
 
-    val error = xor.checkGradient()
+    val error = xor.checkGradient(lambda = 0.0)
 
     println("Gradient check error is "+error)
 
-    error should be < 0.2
+    error should be < 0.01
   }
 }

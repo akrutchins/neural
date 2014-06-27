@@ -40,42 +40,26 @@ class DataSet extends Serializable {
 
   var networks : List[NeuralNetwork] = List()
 
-  // Learning hyper-parameters
-
-  var alpha : Double = 1.0
-  var lambda : Double = 0.0
-
   def addNetwork(network : NeuralNetwork) {
     networks :+= network
     weightsManagers = weightsManagers.union(network.weightsManagers).distinct
   }
 
-  def update() {
+  def saveUnregularizedGradients() {
     weightsManagers.foreach(_.clearGradient())
     networks.foreach(_.saveGradient())
-    weightsManagers.foreach(_.postProcessGradient(alpha,lambda))
-    weightsManagers.foreach(_.adjustWeights())
+    weightsManagers.foreach(_.averageGradientsFromContributors())
   }
 
-  def train(iterations : Int, debug : Boolean = false) : Double = {
-    for (i <- 0 to iterations) {
-      update()
-
-      if (debug) {
-        println("--------\nROUND "+i+"\n----------")
-        println("ERROR: "+squaredError())
-        for (net <- networks) {
-          println("---")
-          println("Inputs: "+net.inputUnits(0).inputs.toDenseMatrix)
-          println("Gold Outputs: "+net.outputUnits(0).goldOutputs.toDenseMatrix)
-          println("Actual Outputs: "+net.outputUnits(0).outputs.toDenseMatrix)
-        }
-      }
-    }
-    squaredError()
+  def regularizeGradients(lambda : Double) {
+    weightsManagers.foreach(wm => wm.gradients :+= (wm.weights*lambda))
   }
 
-  def squaredError() : Double = {
+  def adjustWeights(alpha : Double) {
+    weightsManagers.foreach(_.adjustWeights(alpha))
+  }
+
+  def squaredError(lambda : Double) : Double = {
     networks.foreach(_.feedForward())
     val squaredError : Double = sum(networks.map(_.squaredError()))
     val regularization : Double = sum(weightsManagers.map(wm => sum(wm.weights.map(w => w*w))))
@@ -84,14 +68,13 @@ class DataSet extends Serializable {
 
   // A cute test using the definition of the derivative to check that all the computed derivatives are right on target
 
-  def checkGradient() : Double = {
+  def checkGradient(lambda : Double) : Double = {
     val backpropToBrute : Map[WeightsManager,WeightsManager] = Map(weightsManagers.map(w => (w, new WeightsManager(w.inputSize,w.outputSize))) : _*)
 
-    // Do backprop
+    // Do regularized backprop
 
-    weightsManagers.foreach(_.clearGradient())
-    networks.foreach(_.saveGradient())
-    weightsManagers.foreach(_.postProcessGradient(1.0,lambda))
+    saveUnregularizedGradients()
+    regularizeGradients(lambda)
 
     // Do a brute force approach
 
@@ -102,9 +85,9 @@ class DataSet extends Serializable {
         for (o <- 0 to w.outputSize-1) {
           val baseWeight = w.weights(o,i)
           w.weights(o,i) = baseWeight + epsilon
-          val jPlus = squaredError()
+          val jPlus = squaredError(lambda)
           w.weights(o,i) = baseWeight - epsilon
-          val jMinus = squaredError()
+          val jMinus = squaredError(lambda)
           w.weights(o,i) = baseWeight
           backpropToBrute(w).gradients(o,i) = (jPlus - jMinus) / (2*epsilon)
         }
@@ -112,9 +95,9 @@ class DataSet extends Serializable {
       for (o <- 0 to w.outputSize-1) {
         val baseWeight = w.intercepts(o)
         w.intercepts(o) = baseWeight + epsilon
-        val jPlus = squaredError()
+        val jPlus = squaredError(lambda)
         w.intercepts(o) = baseWeight - epsilon
-        val jMinus = squaredError()
+        val jMinus = squaredError(lambda)
         w.intercepts(o) = baseWeight
         backpropToBrute(w).interceptGradients(o) = (jPlus - jMinus) / (2*epsilon)
       }
@@ -141,11 +124,11 @@ class DataSet extends Serializable {
         println("Intercepts: "+brute.interceptGradients.toDenseMatrix)
     }
 
-    sum(
+    max(
       backpropToBrute.map(pair => {
-        val ws : Double = sum((pair._1.weights-pair._2.weights).map(x => Math.abs(x)))
-        val is : Double = sum((pair._1.interceptGradients-pair._2.interceptGradients).map(x => Math.abs(x)))
-        ws + is
+        val ws : Double = max((pair._1.weights-pair._2.weights).map(Math.abs))
+        val is : Double = max((pair._1.interceptGradients-pair._2.interceptGradients).map(Math.abs))
+        max(ws,is)
       })
     )
   }
