@@ -11,7 +11,9 @@ class WeightsManager(initInputSize : Int, initOutputSize : Int) {
 
   var contributors : Int = 0
 
-  val weights : DenseMatrix[Double] = DenseMatrix.rand(outputSize,inputSize) * 0.01
+  val r : Double = Math.sqrt(6.0 / (initInputSize + initOutputSize))
+
+  val weights : DenseMatrix[Double] = DenseMatrix.rand(outputSize,inputSize) * r
   val intercepts : DenseVector[Double] = DenseVector.zeros[Double](outputSize)
 
   val gradients : DenseMatrix[Double] = DenseMatrix.zeros[Double](outputSize,inputSize)

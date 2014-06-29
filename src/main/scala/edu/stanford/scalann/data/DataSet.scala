@@ -116,17 +116,14 @@ class DataSet extends Serializable {
     backpropToBrute.foreach{
       case (bp,brute) =>
         println("--------")
-        println("Backprop Derivatives:")
-        println(bp.gradients)
-        println("Intercepts: "+bp.interceptGradients.toDenseMatrix)
-        println("Brute Force Derivatives:")
-        println(brute.gradients)
-        println("Intercepts: "+brute.interceptGradients.toDenseMatrix)
+        println("Derivative Delta:")
+        println(bp.gradients - brute.gradients)
+        println("Intercept Delta: "+(bp.interceptGradients.toDenseMatrix - brute.interceptGradients.toDenseMatrix))
     }
 
     max(
       backpropToBrute.map(pair => {
-        val ws : Double = max((pair._1.weights-pair._2.weights).map(Math.abs))
+        val ws : Double = max((pair._1.gradients-pair._2.gradients).map(Math.abs))
         val is : Double = max((pair._1.interceptGradients-pair._2.interceptGradients).map(Math.abs))
         max(ws,is)
       })

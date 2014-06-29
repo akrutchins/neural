@@ -358,8 +358,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
   "A double layer logistic neural network dataset" should "memorize XOR" in {
     val prototype : NeuralNetwork = new NeuralNetwork()
-    val hiddenLayerSize : Int = 4
-    prototype.inputUnit(2) >> prototype.logisticUnit(2,hiddenLayerSize) >> prototype.logisticUnit(hiddenLayerSize,hiddenLayerSize) >> prototype.logisticUnit(hiddenLayerSize,1) >> prototype.outputUnit(1)
+    prototype.inputUnit(2) >> prototype.logisticUnit(2,4) >> prototype.logisticUnit(4,1) >> prototype.outputUnit(1)
 
     val xor : DataSet = DataSet.createSimpleDataset(
       prototype,
@@ -379,7 +378,7 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     val optimizer : AbstractOptimizer = new AdaGradOptimizer()
     optimizer.alpha = 1.0
-    optimizer.iterations = 1000
+    optimizer.iterations = 30000
     val error : Double = optimizer.optimize(xor,debug = true)
 
     error should be < 0.01
@@ -409,6 +408,6 @@ class NeuralNetworkTests extends FlatSpec with Matchers {
 
     println("Gradient check error is "+error)
 
-    error should be < 0.01
+    error should be < 0.0001
   }
 }
